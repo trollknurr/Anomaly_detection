@@ -1,0 +1,26 @@
+model_directory: /assets
+result_directory: /result
+
+machine_type: engine
+
+threshold: 11.766159931003752
+
+max_fpr : 0.1
+
+feature:
+  n_mels: 128
+  frames : 5
+  n_fft: 1024
+  hop_length: 512
+  power: 2.0
+
+
+fit:
+  compile:
+    optimizer : adam
+    loss : mean_squared_error
+  epochs : 100
+  batch_size : 256
+  shuffle : True
+  validation_split : 0.1
+  verbose : 1
