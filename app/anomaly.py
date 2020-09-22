@@ -32,15 +32,14 @@ param = com.yaml_load('anomaly_detection/config.yaml')
 # load model
 ########################################################################
 
-model_file = "anomaly_detection\{model}\model_{machine_type}.hdf5".format(
+model_file = "anomaly_detection/{model}/model_{machine_type}.hdf5".format(
                                                         model=param["model_directory"],
                                                         machine_type=param["machine_type"]
                                                         )
 
-model_dir = Path(os.path.dirname(__file__), model_file)
+#model_dir = Path(os.path.dirname(__file__), model_file)
 
-
-model = keras_model.load_model(model_dir)
+model = keras_model.load_model(model_file)
 #######################################################################
 
 
