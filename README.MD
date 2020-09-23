@@ -7,6 +7,8 @@ https://hub.docker.com/repository/docker/markhubbatulin/anomaly_detection
 
 {
     'filename': ,
+    
     'score': ,
+    
     'status':
 }
