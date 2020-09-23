@@ -15,3 +15,7 @@ Docker: https://hub.docker.com/repository/docker/markhubbatulin/anomaly_detectio
     
     'status':
 }
+
+file - название пришедшего файла
+score - уровень аномальности
+status - True: аномальный, False: нормальный
