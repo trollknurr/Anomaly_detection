@@ -1,0 +1,7 @@
+name: mlflowtestAE
+conda_env: mlflowtestconf.yaml
+entry_points:
+    main:
+        parameters:
+            file: string
+            command: "python mlflowtest_main.py --path {file}"

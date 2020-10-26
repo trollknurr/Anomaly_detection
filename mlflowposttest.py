@@ -15,11 +15,8 @@ def preprocess(file_path):
     return data
 url = "http://127.0.0.1:5004/invocations"
 
-to_predict =preprocess('/home/rnd/Anomaly_detection/train_data/anomaly_defectid_1_id_freq_44.wav').tolist()
-print(to_predict)
 data = {
-    "data": list(to_predict)
-}
+    "path":  'anomaly_defectid_1_id_freq_44.wav'}
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 r = requests.post(url, data=json.dumps(data), headers=headers)
 print(r.text)

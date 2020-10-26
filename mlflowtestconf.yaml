@@ -1,0 +1,10 @@
+name: mlflowtestAE
+channels:
+  - defaults
+  - dependencies:
+    - numpy
+    - pandas
+    - scikit-learn
+    - keras
+    - pip:
+      - mlflow
