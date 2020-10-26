@@ -10,9 +10,9 @@
 ########################################################################
 # from import
 import tensorflow as tf
-import tensorflow.keras.models
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, BatchNormalization, Activation
+import keras.models
+from keras.models import Model
+from keras.layers import Input, Dense, BatchNormalization, Activation
 
 
 ########################################################################
@@ -69,7 +69,6 @@ def get_model(inputDim):
 
 
 def load_model(file_path):
-    with tf.device('/cpu:0'):
-        return tensorflow.keras.models.load_model(file_path)
+    return keras.models.load_model(file_path)
 
     

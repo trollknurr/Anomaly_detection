@@ -12,18 +12,18 @@ import shutil
 # import additional python-library
 ########################################################################
 import numpy
-import tensorflow
-from tqdm import tqdm
 # original lib
 import common as com
 import keras_model
+import mlflow
+import mlflow.keras
 ########################################################################
 
 
 ########################################################################
 # load parameter.yaml
 ########################################################################
-param = com.yaml_load()
+param = com.yaml_load('/home/rnd/Anomaly_detection/config.yaml')
 
 
 def list_to_vector_array(file_list,
@@ -51,7 +51,7 @@ def list_to_vector_array(file_list,
     dims = n_mels * frames
 
     # iterate file_to_vector_array()
-    for idx in tqdm(range(len(file_list)), desc=msg):
+    for idx in range(len(file_list)):
         vector_array = com.file_to_vector_array(file_list[idx],
                                                 n_mels=n_mels,
                                                 frames=frames,
@@ -66,7 +66,6 @@ def list_to_vector_array(file_list,
 
 
 def file_list_generator(target_dir,
-                        dir_name="train",
                         ext="wav"):
     """
     target_dir : str
@@ -83,13 +82,15 @@ def file_list_generator(target_dir,
     com.logger.info("target_dir : {}".format(target_dir))
 
     # generate training list
-    training_list_path = os.path.abspath("{dir}/{dir_name}/*.{ext}".format(dir=target_dir, dir_name=dir_name, ext=ext))
+    training_list_path = os.path.abspath("{dir}/*.{ext}".format(dir=target_dir, ext=ext))
     files = sorted(glob.glob(training_list_path))
     if len(files) == 0:
         com.logger.exception("no_wav_file!!")
 
     com.logger.info("train_file num : {num}".format(num=len(files)))
     return files
+
+
 ########################################################################
 
 
@@ -97,40 +98,14 @@ def file_list_generator(target_dir,
 # main 00_train.py
 ########################################################################
 if __name__ == "__main__":
-    # check mode
-    # "development": mode == True
-    # "evaluation": mode == False
-    mode = True #com.command_line_chk()
-    if mode is None:
-        sys.exit(-1)
-        
-    # make output directory
-    os.makedirs(param["model_directory"], exist_ok=True)
-
-    # initialize the visualizer
-    visualizer = visualizer()
-
-    # load base_directory list
-    dirs = com.select_dirs(param=param, mode=mode)
-
-    # loop of the base directory
-    for idx, target_dir in enumerate(dirs):
-        print("\n===========================")
-        print("[{idx}/{total}] {dirname}".format(dirname=target_dir, idx=idx+1, total=len(dirs)))
-
-        # set path
-        machine_type = os.path.split(target_dir)[1]
-        model_file_path = "{model}/model_{machine_type}.hdf5".format(model=param["model_directory"],
-                                                                     machine_type=machine_type)
-        history_img = "{model}/history_{machine_type}.png".format(model=param["model_directory"],
-                                                                  machine_type=machine_type)
-
-        if os.path.exists(model_file_path):
-            com.logger.info("model exists")
-            continue
-
-        # generate dataset
-        print("============== DATASET_GENERATOR ==============")
+    mlflow.set_tracking_uri("http://localhost:5002")
+    os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://localhost:9000'
+    os.environ['AWS_ACCESS_KEY_ID'] = 'minio'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'miniostorage'
+    with mlflow.start_run():
+        mlflow.keras.autolog()
+        model_file_path = "/home/rnd/Anomaly_detection/model/model_engine.hdf5"
+        target_dir='/home/rnd/Anomaly_detection/train_data'
         files = file_list_generator(target_dir)
         train_data = list_to_vector_array(files,
                                           msg="generate train_dataset",
@@ -140,15 +115,11 @@ if __name__ == "__main__":
                                           hop_length=param["feature"]["hop_length"],
                                           power=param["feature"]["power"])
 
-        # train model
-        print("============== MODEL TRAINING ==============")
-        
+
+
+
         model = keras_model.get_model(param["feature"]["n_mels"] * param["feature"]["frames"])
         model.summary()
-
-        gpu_options = tensorflow.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.333)
-
-        sess = tensorflow.compat.v1.Session(config=tensorflow.compat.v1.ConfigProto(gpu_options=gpu_options, log_device_placement=True))   
 
         model.compile(**param["fit"]["compile"])
         history = model.fit(train_data,
@@ -158,11 +129,4 @@ if __name__ == "__main__":
                             shuffle=param["fit"]["shuffle"],
                             validation_split=param["fit"]["validation_split"],
                             verbose=param["fit"]["verbose"])
-
-        sess.close()
-
-        visualizer.loss_plot(history.history["loss"], history.history["val_loss"])
-        visualizer.save_figure(history_img)
-        model.save(model_file_path)
-        com.logger.info("save_model -> {}".format(model_file_path))
-        print("============== END TRAINING ==============")
+        run_id = mlflow.active_run().info.run_id
