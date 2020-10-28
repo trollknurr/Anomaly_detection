@@ -1,6 +1,7 @@
 import csv
 import glob
 import os
+import pathlib
 
 import numpy as np
 import argparse
@@ -17,8 +18,8 @@ import keras_model
 param = com.yaml_load('config.yaml')
 
 input_schema = Schema(
-    [ColSpec("string", "path"), ColSpec("float", "n_mels"), ColSpec("float", "frames"), ColSpec("float", "n_fft"),
-     ColSpec("float", "hop_length"), ColSpec("float", "power")])
+    [ColSpec("string", "path"), ColSpec("double", "n_mels"), ColSpec("double", "frames"), ColSpec("double", "n_fft"),
+     ColSpec("double", "hop_length"), ColSpec("double", "power")])
 output_schema = Schema([ColSpec("float")])
 signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 s3 = boto3.resource('s3',
@@ -86,12 +87,16 @@ class AEA(mlflow.pyfunc.PythonModel):
                        verbose=param["fit"]["verbose"])
 
     def predict(self, context, model_input):
-        file_path, n_mels, frames, n_fft, hop_length, power = str(model_input["path"][0]), float(
-            model_input["n_mels"][0]), float(model_input["frames"][0]), float(model_input["n_fft"][0]), float(
-            model_input["hop_length"][0]), float(model_input["power"][0])
-        local_path = '/tmp/' + file_path
+        file_path, n_mels, frames, n_fft, hop_length, power = np.array([str(model_input["path"][0])]), np.array([
+            model_input["n_mels"][0]]), np.array([model_input["frames"][0]]), np.array([model_input["n_fft"][0]]), np.array([
+            model_input["hop_length"][0]]), np.array([model_input["power"][0]])
+        file_path_loc = './tmp/' + file_path
+        print(file_path_loc)
+        local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
         s3.Bucket('testdata').download_file(file_path, local_path)
+        print('lol ya tut')
         data = preprocess(local_path, n_mels, frames, n_fft, hop_length, power)
+        data=np.random.random((427, 640))
         result = self.model.predict(data)
         errors = np.mean(np.square(data - result), axis=1)
         return np.mean(errors)
@@ -99,7 +104,7 @@ class AEA(mlflow.pyfunc.PythonModel):
 
 if __name__ == '__main__':
     mlflow.set_tracking_uri("http://localhost:5003")
-    os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://localhost:9000'
+    os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://10.0.2.15:9000'
     os.environ['AWS_ACCESS_KEY_ID'] = 'minio'
     os.environ['AWS_SECRET_ACCESS_KEY'] = 'miniostorage'
     # exp_id = mlflow.set_experiment("/ae_keras")

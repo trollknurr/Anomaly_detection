@@ -6,7 +6,7 @@ import common as com
 import pandas as pd
 param = com.yaml_load('/home/rnd/Anomaly_detection/config.yaml')
 
-url = "http://127.0.0.1:5004/invocations"
+url = "http://127.0.0.1:5008/invocations"
 
 # data = '[{{"path": {path},"n_mels": {n_mels},"frames": {frames},"n_fft": {n_fft},"hop_length": {hop_length},"power": {power}}}]'.format(
 #     path="anomaly_defectid_1_id_freq_44.wav",

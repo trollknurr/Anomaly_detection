@@ -1,3 +1,5 @@
+import pathlib
+
 import common as com
 import keras_model
 import glob
@@ -8,7 +10,7 @@ import boto3
 param = com.yaml_load('config.yaml')
 
 s3 = boto3.resource('s3',
-                    endpoint_url='http://localhost:9000',
+                    endpoint_url='http://10.0.2.15:9000',
                     aws_access_key_id='minio',
                     aws_secret_access_key='miniostorage')
 
@@ -58,8 +60,11 @@ model.fit(dataset,dataset,
                     verbose=param["fit"]["verbose"])
 
 file_path = 'anomaly_defectid_1_id_freq_44.wav'
-local_path='/tmp/' + file_path
+file_path_loc='./tmp/' + file_path
+print(file_path_loc)
+local_path=str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
 s3.Bucket('testdata').download_file(file_path, local_path)
 data = preprocess(local_path)
+print(data.shape)
 result = model.predict(data)
 print(result)
