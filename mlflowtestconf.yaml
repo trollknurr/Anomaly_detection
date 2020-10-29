@@ -6,5 +6,6 @@ channels:
     - pandas
     - scikit-learn
     - keras
+    - tensorflow
     - pip:
       - mlflow

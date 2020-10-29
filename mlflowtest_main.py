@@ -2,7 +2,7 @@ import glob
 import os
 import pathlib
 import sys
-
+import tensorflow as tf
 import librosa
 import numpy as np
 import argparse
@@ -22,10 +22,7 @@ param = com.yaml_load('config.yaml')
 input_schema = Schema([ColSpec("string", "path")])
 output_schema = Schema([ColSpec("float")])
 signature = ModelSignature(inputs=input_schema, outputs=output_schema)
-s3 = boto3.resource('s3',
-                    endpoint_url='http://10.0.2.15:9000',
-                    aws_access_key_id='minio',
-                    aws_secret_access_key='miniostorage')
+
 
 
 def list_to_vector_array(file_list, param):
@@ -92,8 +89,15 @@ def make_train_dataset(files_dir, param):
 
 class AEA(mlflow.pyfunc.PythonModel):
 
-    def __init__(self, files_dir, param, preprocess, make_train_dataset, keras_model):
+    def __init__(self, files_dir, param, preprocess, make_train_dataset):
         self.preprocess = preprocess
+        setattr(tf.contrib.rnn.GRUCell, '__deepcopy__', lambda self, _: self)
+        setattr(tf.contrib.rnn.BasicLSTMCell, '__deepcopy__', lambda self, _: self)
+        setattr(tf.contrib.rnn.MultiRNNCell, '__deepcopy__', lambda self, _: self)
+        # self.s3 = boto3.resource('s3',
+        #                     endpoint_url='http://10.0.2.15:9000',
+        #                     aws_access_key_id='minio',
+        #                     aws_secret_access_key='miniostorage')
         dataset = make_train_dataset(files_dir, param)
         inputDim = param["feature"]["n_mels"] * param["feature"]["frames"]
         inputLayer = Input(shape=(inputDim,))
@@ -136,24 +140,25 @@ class AEA(mlflow.pyfunc.PythonModel):
 
         h = Dense(inputDim)(h)
         self.model = Model(inputs=inputLayer, outputs=h)
-        self.param = param
-        self.model.compile(**param["fit"]["compile"])
-        self.model.fit(dataset, dataset,
-                       epochs=param["fit"]["epochs"],
-                       batch_size=param["fit"]["batch_size"],
-                       shuffle=param["fit"]["shuffle"],
-                       validation_split=param["fit"]["validation_split"],
-                       verbose=param["fit"]["verbose"])
+        # self.param = param
+        # self.model.compile(**param["fit"]["compile"])
+        # self.model.fit(dataset, dataset,
+        #                epochs=param["fit"]["epochs"],
+        #                batch_size=param["fit"]["batch_size"],
+        #                shuffle=param["fit"]["shuffle"],
+        #                validation_split=param["fit"]["validation_split"],
+        #                verbose=param["fit"]["verbose"])
 
     def predict(self, context, model_input):
-        file_path = str(model_input["path"][0])
-        file_path_loc = './tmp/' + file_path
-        local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
-        s3.Bucket('testdata').download_file(file_path, local_path)
+        # file_path = str(model_input["path"][0])
+        # file_path_loc = './tmp/' + file_path
+        # local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
+        local_path='./tmp/anomaly_defectid_1_id_freq_44.wav'
+        # self.s3.Bucket('testdata').download_file(file_path, local_path)
         data = self.preprocess(local_path, self.param)
-        result = self.model.predict(data)
-        errors = np.mean(np.square(data - result), axis=1)
-        return np.mean(errors)
+        # result = self.model.predict(data)
+        # errors = np.mean(np.square(data - result), axis=1)
+        return np.mean(data)
 
 
 if __name__ == '__main__':
@@ -168,7 +173,7 @@ if __name__ == '__main__':
     file_name = args.path
 
     with mlflow.start_run(run_name="Mlflow_test") as run:
-        modelV = AEA(file_name, param, preprocess, make_train_dataset, keras_model)
+        modelV = AEA(file_name, param, preprocess, make_train_dataset)
         # mlflow.pyfunc.log_model("model", python_model=model,
         #                         conda_env='mlflowtestconf.yaml',
         #                         signature=signature)
