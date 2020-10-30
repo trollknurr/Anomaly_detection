@@ -7,5 +7,6 @@ channels:
     - scikit-learn
     - keras
     - tensorflow
+    - cloudpickle==0.5.8
     - pip:
       - mlflow
