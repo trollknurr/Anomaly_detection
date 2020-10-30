@@ -4,4 +4,4 @@ entry_points:
     main:
         parameters:
             file: string
-            command: "python mlflowtest_main.py --path {file}"
+            command: "python mlflowtest_main_v2.py --path {file}"

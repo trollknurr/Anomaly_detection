@@ -1,22 +1,19 @@
 import glob
 import os
-import pathlib
 import sys
-import tensorflow as tf
 import librosa
 import numpy as np
 import argparse
 import tempfile
 import boto3
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, BatchNormalization, Activation
+from keras.models import Model
+from keras.layers import Input, Dense, BatchNormalization, Activation
 import mlflow.pyfunc
 from mlflow.models.signature import ModelSignature
 from mlflow.types.schema import Schema, ColSpec
 from scipy.io import wavfile
 import keras
 import common as com
-import keras_model
 
 param = com.yaml_load('config.yaml')
 
@@ -114,9 +111,6 @@ class AEA(mlflow.pyfunc.PythonModel):
 
     def __init__(self, files_dir, param, preprocess, make_train_dataset,s3):
         self.preprocess = preprocess
-        setattr(tf.compat.v1.nn.rnn_cell.GRUCell, '__deepcopy__', lambda self, _: self)
-        setattr(tf.compat.v1.nn.rnn_cell.BasicLSTMCell, '__deepcopy__', lambda self, _: self)
-        setattr(tf.compat.v1.nn.rnn_cell.MultiRNNCell, '__deepcopy__', lambda self, _: self)
         self.s3 = s3
         dataset = make_train_dataset(files_dir, param)
         inputDim = param["feature"]["n_mels"] * param["feature"]["frames"]
@@ -174,12 +168,14 @@ class AEA(mlflow.pyfunc.PythonModel):
         file_path = str(model_input["path"][0])
         # file_path_loc = './tmp/' + file_path
         # local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
-
-        obj=self.s3.Bucket('testdata').Object(file_path).get()
-        data = self.preprocess(obj['Body'], self.param)
+        self.s3('s3')
+        # obj=self.s3.Bucket('testdata').Object(file_path).get()
+        with open('input.wav', 'wb') as data:
+            self.s3.download_fileobj('testdata', file_path, data)
+        data = self.preprocess('input.wav', self.param)
         result = self.model.predict(data)
         errors = np.mean(np.square(data - result), axis=1)
-        return np.mean(data)
+        return np.mean(errors)
 
 
 if __name__ == '__main__':
@@ -196,16 +192,17 @@ if __name__ == '__main__':
     parser.add_argument('--path')
     args = parser.parse_args()
     file_name = args.path
-    s3=boto3.resource('s3',
-                            endpoint_url=endpoint_url,
-                            aws_access_key_id=aws_access_key_id,
-                            aws_secret_access_key=aws_secret_access_key)
+    # s3=boto3.resource('s3',
+    #                         endpoint_url=endpoint_url,
+    #                         aws_access_key_id=aws_access_key_id,
+    #                         aws_secret_access_key=aws_secret_access_key)
+    s3= boto3.client
     with mlflow.start_run(run_name="Mlflow_test") as run:
         modelV = AEA(file_name, param, preprocess, make_train_dataset,s3)
         # mlflow.pyfunc.log_model("model", python_model=model,
         #                         conda_env='mlflowtestconf.yaml',
         #                         signature=signature)
-        mlflow.pyfunc.log_model(artifact_path="model", python_model=modelV, signature=signature, code_path=[__file__],conda_env='mlflowtestconf.yaml')
+        mlflow.pyfunc.log_model(artifact_path="model", python_model=modelV, signature=signature, code_path=[__file__])
         run_id = run.info.run_uuid
         experiment_id = run.info.experiment_id
         mlflow.end_run()
