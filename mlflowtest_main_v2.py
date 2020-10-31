@@ -6,13 +6,14 @@ import numpy as np
 import argparse
 import tempfile
 import boto3
-from keras.models import Model
-from keras.layers import Input, Dense, BatchNormalization, Activation
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Dense, BatchNormalization, Activation
 import mlflow.pyfunc
 from mlflow.models.signature import ModelSignature
 from mlflow.types.schema import Schema, ColSpec
 from scipy.io import wavfile
-import keras
+import tensorflow.keras
+import tensorflow
 import common as com
 
 param = com.yaml_load('config.yaml')
@@ -78,11 +79,11 @@ def preprocess(file_path, param):
         vector_array[:, n_mels * t: n_mels * (t + 1)] = log_mel_spectrogram[:, t: t + vector_array_size].T
     return vector_array
 
-def make_keras_picklable():
+def make_tensorflow_picklable():
     def __getstate__(self):
         model_str = ""
         with tempfile.NamedTemporaryFile(suffix='.hdf5', delete=True) as fd:
-            keras.models.save_model(self, fd.name, overwrite=True)
+            tensorflow.keras.models.save_model(self, fd.name, overwrite=True)
             model_str = fd.read()
         d = { 'model_str': model_str }
         return d
@@ -91,15 +92,14 @@ def make_keras_picklable():
         with tempfile.NamedTemporaryFile(suffix='.hdf5', delete=True) as fd:
             fd.write(state['model_str'])
             fd.flush()
-            model = keras.models.load_model(fd.name)
+            model = tensorflow.keras.models.load_model(fd.name)
         self.__dict__ = model.__dict__
 
 
-    cls = keras.models.Model
+    cls = tensorflow.keras.models.Model
     cls.__getstate__ = __getstate__
     cls.__setstate__ = __setstate__
 
-make_keras_picklable()
 
 def make_train_dataset(files_dir, param):
     files = file_list_generator(files_dir)
@@ -109,7 +109,12 @@ def make_train_dataset(files_dir, param):
 
 class AEA(mlflow.pyfunc.PythonModel):
 
-    def __init__(self, files_dir, param, preprocess, make_train_dataset,s3):
+    def __init__(self, files_dir, param, preprocess, make_train_dataset,s3,make_tensorflow_picklable):
+        import logging
+        self.logging=logging
+        self.logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+        self.logging.warning('This will get logged to a file')
+        make_tensorflow_picklable()
         self.preprocess = preprocess
         self.s3 = s3
         dataset = make_train_dataset(files_dir, param)
@@ -164,22 +169,28 @@ class AEA(mlflow.pyfunc.PythonModel):
                        validation_split=param["fit"]["validation_split"],
                        verbose=param["fit"]["verbose"])
 
+    def load_context(self, context):
+        self.model=tensorflow.keras.models.load_model(context.artifacts['keras_model'])
+
     def predict(self, context, model_input):
         file_path = str(model_input["path"][0])
         # file_path_loc = './tmp/' + file_path
         # local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
-        self.s3('s3')
+        self.s3=self.s3('s3',endpoint_url='http://10.0.2.15:9000',
+                            aws_access_key_id='minio',
+                            aws_secret_access_key='miniostorage')
         # obj=self.s3.Bucket('testdata').Object(file_path).get()
-        with open('input.wav', 'wb') as data:
-            self.s3.download_fileobj('testdata', file_path, data)
-        data = self.preprocess('input.wav', self.param)
+        self.s3.download_file('testdata', file_path, file_path)
+
+        data = self.preprocess(file_path, self.param)
+        # self.model=tensorflow.keras.models.load_model(context['data'])
         result = self.model.predict(data)
         errors = np.mean(np.square(data - result), axis=1)
         return np.mean(errors)
 
 
 if __name__ == '__main__':
-    make_keras_picklable()
+    make_tensorflow_picklable()
     aws_access_key_id='minio'
     aws_secret_access_key = 'miniostorage'
     endpoint_url = 'http://10.0.2.15:9000'
@@ -187,7 +198,7 @@ if __name__ == '__main__':
     os.environ['MLFLOW_S3_ENDPOINT_URL'] = endpoint_url
     os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key_id
     os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
-    # exp_id = mlflow.set_experiment("/ae_keras")
+    # exp_id = mlflow.set_experiment("/ae_tensorflow.keras")
     parser = argparse.ArgumentParser()
     parser.add_argument('--path')
     args = parser.parse_args()
@@ -198,11 +209,13 @@ if __name__ == '__main__':
     #                         aws_secret_access_key=aws_secret_access_key)
     s3= boto3.client
     with mlflow.start_run(run_name="Mlflow_test") as run:
-        modelV = AEA(file_name, param, preprocess, make_train_dataset,s3)
+        modelV = AEA(file_name, param, preprocess, make_train_dataset,s3,make_tensorflow_picklable)
         # mlflow.pyfunc.log_model("model", python_model=model,
         #                         conda_env='mlflowtestconf.yaml',
         #                         signature=signature)
-        mlflow.pyfunc.log_model(artifact_path="model", python_model=modelV, signature=signature, code_path=[__file__])
+
+        mlflow.pyfunc.log_model(artifact_path="model", python_model=modelV, signature=signature, code_path=[__file__],conda_env='conda.yaml',artifacts={'keras_model':'model/model_engine.hdf5'})
+        # mlflow.keras.log_model(modelV.model, artifact_path="model/model_keras")
         run_id = run.info.run_uuid
         experiment_id = run.info.experiment_id
         mlflow.end_run()
