@@ -109,14 +109,14 @@ def make_train_dataset(files_dir, param):
 
 class AEA(mlflow.pyfunc.PythonModel):
 
-    def __init__(self, files_dir, param, preprocess, make_train_dataset,s3,make_tensorflow_picklable):
-        import logging
-        self.logging=logging
-        self.logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-        self.logging.warning('This will get logged to a file')
+    def __init__(self, files_dir, param, preprocess, make_train_dataset,s3,endpoint_url,aws_access_key_id,aws_secret_access_key,baket_name,make_tensorflow_picklable):
         make_tensorflow_picklable()
         self.preprocess = preprocess
         self.s3 = s3
+        self.baket_name=baket_name
+        self.endpoint_url=endpoint_url
+        self.aws_access_key_id=aws_access_key_id
+        self.aws_secret_access_key=aws_secret_access_key
         dataset = make_train_dataset(files_dir, param)
         inputDim = param["feature"]["n_mels"] * param["feature"]["frames"]
         inputLayer = Input(shape=(inputDim,))
@@ -174,19 +174,21 @@ class AEA(mlflow.pyfunc.PythonModel):
 
     def predict(self, context, model_input):
         file_path = str(model_input["path"][0])
-        # file_path_loc = './tmp/' + file_path
-        # local_path = str(pathlib.Path(file_path_loc).parent.mkdir(parents=True, exist_ok=True))
-        self.s3=self.s3('s3',endpoint_url='http://10.0.2.15:9000',
-                            aws_access_key_id='minio',
-                            aws_secret_access_key='miniostorage')
-        # obj=self.s3.Bucket('testdata').Object(file_path).get()
-        self.s3.download_file('testdata', file_path, file_path)
-
+        self.s3=self.s3('s3',endpoint_url=self.endpoint_url,
+                            aws_access_key_id=self.aws_access_key_id,
+                            aws_secret_access_key=self.aws_secret_access_key)
+        self.s3.download_file(self.baket_name, file_path, file_path)
         data = self.preprocess(file_path, self.param)
-        # self.model=tensorflow.keras.models.load_model(context['data'])
         result = self.model.predict(data)
         errors = np.mean(np.square(data - result), axis=1)
-        return np.mean(errors)
+        anomaly_score = np.mean(errors)
+
+        if anomaly_score > param['threshold']:
+            status = True
+        else:
+            status = False
+        os.remove(file_path)
+        return {'anomaly_score':anomaly_score,'status':status}
 
 
 if __name__ == '__main__':
@@ -194,28 +196,19 @@ if __name__ == '__main__':
     aws_access_key_id='minio'
     aws_secret_access_key = 'miniostorage'
     endpoint_url = 'http://10.0.2.15:9000'
+    baket_name='test_data'
     mlflow.set_tracking_uri("http://localhost:5003")
     os.environ['MLFLOW_S3_ENDPOINT_URL'] = endpoint_url
     os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key_id
     os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
-    # exp_id = mlflow.set_experiment("/ae_tensorflow.keras")
     parser = argparse.ArgumentParser()
     parser.add_argument('--path')
     args = parser.parse_args()
     file_name = args.path
-    # s3=boto3.resource('s3',
-    #                         endpoint_url=endpoint_url,
-    #                         aws_access_key_id=aws_access_key_id,
-    #                         aws_secret_access_key=aws_secret_access_key)
     s3= boto3.client
     with mlflow.start_run(run_name="Mlflow_test") as run:
-        modelV = AEA(file_name, param, preprocess, make_train_dataset,s3,make_tensorflow_picklable)
-        # mlflow.pyfunc.log_model("model", python_model=model,
-        #                         conda_env='mlflowtestconf.yaml',
-        #                         signature=signature)
-
+        modelV = AEA(file_name, param, preprocess, make_train_dataset,s3,endpoint_url,aws_access_key_id,aws_secret_access_key,baket_name,make_tensorflow_picklable)
         mlflow.pyfunc.log_model(artifact_path="model", python_model=modelV, signature=signature, code_path=[__file__],conda_env='conda.yaml',artifacts={'keras_model':'model/model_engine.hdf5'})
-        # mlflow.keras.log_model(modelV.model, artifact_path="model/model_keras")
         run_id = run.info.run_uuid
         experiment_id = run.info.experiment_id
         mlflow.end_run()
