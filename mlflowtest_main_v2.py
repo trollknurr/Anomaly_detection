@@ -19,7 +19,7 @@ import common as com
 param = com.yaml_load('config.yaml')
 
 input_schema = Schema([ColSpec("string", "path")])
-output_schema = Schema([ColSpec("float")])
+output_schema = Schema([ColSpec("string")])
 signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 
 
@@ -188,7 +188,7 @@ class AEA(mlflow.pyfunc.PythonModel):
         else:
             status = False
         os.remove(file_path)
-        return {'anomaly_score':anomaly_score,'status':status}
+        return str({'anomaly_score':anomaly_score,'status':status})
 
 
 if __name__ == '__main__':
