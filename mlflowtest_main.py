@@ -163,7 +163,7 @@ class AEA(mlflow.pyfunc.PythonModel):
 
 if __name__ == '__main__':
     mlflow.set_tracking_uri("http://localhost:5003")
-    os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://10.0.2.15:9000'
+    os.environ['MLFLOW_S3_ENDPOINT_URL'] = 'http://localhost:9000'
     os.environ['AWS_ACCESS_KEY_ID'] = 'minio'
     os.environ['AWS_SECRET_ACCESS_KEY'] = 'miniostorage'
     # exp_id = mlflow.set_experiment("/ae_keras")

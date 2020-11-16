@@ -195,7 +195,7 @@ if __name__ == '__main__':
     make_tensorflow_picklable()
     aws_access_key_id='minio'
     aws_secret_access_key = 'miniostorage'
-    endpoint_url = 'http://10.0.2.15:9000'
+    endpoint_url = 'http://localhost:9000'
     baket_name='test_data'
     mlflow.set_tracking_uri("http://localhost:5003")
     os.environ['MLFLOW_S3_ENDPOINT_URL'] = endpoint_url
