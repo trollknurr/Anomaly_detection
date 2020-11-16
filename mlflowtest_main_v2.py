@@ -196,7 +196,7 @@ if __name__ == '__main__':
     aws_access_key_id='minio'
     aws_secret_access_key = 'miniostorage'
     endpoint_url = 'http://localhost:9000'
-    baket_name='test_data'
+    baket_name='testdata'
     mlflow.set_tracking_uri("http://localhost:5003")
     os.environ['MLFLOW_S3_ENDPOINT_URL'] = endpoint_url
     os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key_id
