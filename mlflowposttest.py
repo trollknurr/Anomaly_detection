@@ -10,3 +10,4 @@ data=df.to_json(index=False,orient='split')
 print(data)
 headers = {'Content-type': 'application/json', 'format': 'pandas-records'}
 r = requests.post(url, data=data, headers=headers)
+print(r.text)
