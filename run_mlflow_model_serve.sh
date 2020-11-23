@@ -1,3 +1,3 @@
 #!/bin/sh
-mlflow models serve -m $ARTIFACT_STORE -h $SERVER_HOST -p $SERVER_PORT -w 1 --no-conda
+python mlfow_load_model_and_run.py
 #python -c "import tensorflow"

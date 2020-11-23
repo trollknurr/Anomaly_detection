@@ -8,3 +8,6 @@ export MINIO_SECRET_KEY=miniostorage
 export MLFLOW_S3_ENDPOINT_URL=http://172.17.0.2:9000
 export AWS_ACCESS_KEY_ID=minio
 export AWS_SECRET_ACCESS_KEY=miniostorage
+export ARTIFACT_STORE=s3://test/0/7b3cc8e4d457455e806ed877f099efe1/artifacts/model
+SERVER_PORT=5005
+SERVER_HOST=0.0.0.0

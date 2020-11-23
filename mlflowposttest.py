@@ -2,7 +2,7 @@ import json
 import requests
 import pandas as pd
 
-url = "http://127.0.0.1:5003/invocations"
+url = "http://127.0.0.1:5005/invocations"
 col=['path']
 data = [['anomaly_defectid_1_id_freq_44.wav']]
 df=pd.DataFrame(data=data,columns=col)
