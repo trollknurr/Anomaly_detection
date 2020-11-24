@@ -41,5 +41,6 @@ def get_anomaly_score():
                         'score': score})
 
 if __name__ == '__main__':
-
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    host=os.environ.get('HOST')
+    port = os.environ.get('PORT')
+    app.run(debug=True, host=host, port=port)
