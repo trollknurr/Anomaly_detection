@@ -30,15 +30,17 @@ def get_anomaly_score():
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'input.wav')
         file.save(filepath)
-
-    status, score = get_anomaly(filepath)
+        status, score = get_anomaly(filepath)
     
-    return jsonify({
+        return jsonify({
                         'filename': filename,
                         'status': status, 
                         'score': score})
+    else:
+        return jsonify({
+                        'error': 'hz'})
 
 if __name__ == '__main__':
     host=os.environ.get('HOST')
