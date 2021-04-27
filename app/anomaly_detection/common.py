@@ -130,7 +130,7 @@ def file_to_vector_array(file_name,
     dims = n_mels * frames
 
     # 02 generate melspectrogram using librosa
-    sr, y = wavfile.read(file_name)
+    y, sr = librosa.load(file_name)
     mel_spectrogram = librosa.feature.melspectrogram(y=y,
                                                      sr=sr,
                                                      n_fft=n_fft,
