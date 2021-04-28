@@ -1,65 +1,48 @@
-from flask import Flask, request, jsonify, redirect, flash, url_for
 import os
-from influxdb_client import InfluxDBClient, Point
-from datetime import datetime
-from anomaly import get_anomaly
-from werkzeug.utils import secure_filename
+import tempfile
 
-UPLOAD_FOLDER = 'processed_data'
+from flask import Flask, request, jsonify, redirect, flash, url_for, render_template
+from influxdb_client import InfluxDBClient, Point
+from anomaly import get_anomaly
+
 ALLOWED_EXTENSIONS = {'wav'}
 
 app = Flask(__name__)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = 'someobviousshit'
 
 client = InfluxDBClient(
-    url="http://192.168.1.144:8086",
-    token="Z0qLr5Uu_PfxhEs69u6tRIjn5A2KWAb12O-UXysIgUOA9hi1byHIaSnaXKb-e5mLUMsWPjqjRgO0KC3ecdp49w==",
+    url="http://influxdb:8086",
+    token="ixfIXVQmewr59n4SheTgWwQmWw659hlB3Qv8xnuvPSbLhHOU3JUk5OanbxBBmd9Ij26h-_wS5HuqBCHUZ4hd0g==",
     org="techlab"
 )
 
 write_api = client.write_api()
+
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
+
+
 @app.route('/', methods=['POST'])
 def get_anomaly_score():
-
-    if 'file' not in request.files:
-        flash('No file part')
-        return redirect(request.url)
-
-    file = request.files['file']
-
-    if file.filename == '':
-        flash('No selected file')
-        return redirect(request.url)
-
-    # if file and allowed_file(file.filename):
-    #     filename = secure_filename(file.filename)
-    #     filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'input.wav')
-        #file.save(filepath)
-    status, score = get_anomaly(request.files['file'])
-    now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    ogg_file = request.files['file']
+    with tempfile.NamedTemporaryFile(suffix='.ogg') as tf:
+        ogg_file.save(tf.name)
+        status, score = get_anomaly(tf.name)
 
     write_api.write(
         "techlab",
         "techlab",
-        Point("engine_break").field("proba", score)
+        Point("remote_mic").field("score", score)
     )
-    return jsonify({
-                    'datetime': dt_string,
-                    'status': status,
-                    'score': score})
-    # else:
-    #     return jsonify({
-    #                     'error': 'hz'})
+    return jsonify({'status': status, 'score': score})
+
 
 if __name__ == '__main__':
-    #host=os.environ.get('HOST')
-    #port = os.environ.get('PORT')
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5000,  ssl_context=('cert.pem', 'key.pem'))

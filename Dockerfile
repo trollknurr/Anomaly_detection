@@ -1,18 +1,13 @@
-FROM ubuntu:18.04
+FROM python:3.8-buster
 MAINTAINER Khubbatulin Mark 'Khubbatulin.mark@clover.global'
 
-RUN apt-get update -y && \
-    apt-get install -y python3.6 python3-pip
-
-RUN apt-get install -y libsndfile1
-RUN apt-get install -y libsndfile1-dev
-RUN python3 -m pip install --upgrade pip
+RUN apt-get update -y && apt-get install -y libsndfile1 libsndfile1-dev ffmpeg
 
 COPY ./requirements.txt /app/requirements.txt
 WORKDIR /app
 RUN pip3 install -r requirements.txt
 COPY ./app /app
 WORKDIR /app
-ENTRYPOINT [ "python3" ]
 
+ENTRYPOINT [ "python" ]
 CMD ["app.py"]

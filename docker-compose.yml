@@ -1,16 +1,38 @@
-version: "3"
+version: '3'
 
 services:
-  
-  anomaly_detection:
-
-    image: anomaly_detection
-    environment:
-      - HOST=0.0.0.0
-      - PORT=5001
-    restart: 'always'
+  influxdb:
+    image: influxdb:2.0
+    volumes:
+      - influxdbv2:/var/lib/influxdb2
     ports:
-      - "5001:5001"
-    #volumes:
-      # - ${PWD}/processed_data:/anomaly_detection/processed_data
-      # - ${PWD}/anomaly_detection/config.yaml:/anomaly_detection/config.yaml
+      - 8086:8086
+    environment:
+      DOCKER_INFLUXDB_INIT_USERNAME: techlab
+      DOCKER_INFLUXDB_INIT_PASSWORD: techlab
+      DOCKER_INFLUXDB_INIT_ORG: techlab
+      DOCKER_INFLUXDB_INIT_BUCKET: techlab
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: Z0qLr5Uu_PfxhEs69u6tRIjn5A2KWAb12O-UXysIgUOA9hi1byHIaSnaXKb-e5mLUMsWPjqjRgO0KC3ecdp49w==
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - v_grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=techlab
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - 3000:3000
+    user: "472"
+
+  detector:
+    build:
+      context: .
+    ports:
+      - 5000:5000
+    volumes:
+    - ./app:/app
+
+volumes:
+  influxdbv2:
+  v_grafana:
