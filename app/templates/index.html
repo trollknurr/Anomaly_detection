@@ -2,365 +2,230 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
     <title>Honest wave tool</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-        }
-
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 0.8rem;
-        }
-
-        .wrapper {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        h1, h2 {
-            font-size: 2rem;
-            text-align: center;
-            font-weight: normal;
-            padding: 0.5rem 0 0 0;
-        }
-
-        .main-controls {
-            padding: 0.5rem 0;
-        }
-
-        canvas {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        #buttons {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-        }
-
-        #buttons button {
-            font-size: 1rem;
-            padding: 1rem;
-            width: calc(50% - 0.25rem);
-        }
-
-        button {
-            font-size: 1rem;
-            background: #0088cc;
-            text-align: center;
-            color: white;
-            border: none;
-            transition: all 0.2s;
-            padding: 0.5rem;
-        }
-
-        button:hover, button:focus {
-            box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 1);
-            background: #0ae;
-        }
-
-        button:active {
-            box-shadow: inset 0px 0px 20px rgba(0, 0, 0, 0.5);
-            transform: translateY(2px);
-        }
-
-
-        /* Make the clips use as much space as possible, and
-         * also show a scrollbar when there are too many clips to show
-         * in the available space */
-        .sound-clips {
-            flex: 1;
-            overflow: auto;
-        }
-
-        section, article {
-            display: block;
-        }
-
-        .clip {
-            padding-bottom: 1rem;
-        }
-
-        audio {
-            width: 100%;
-            display: block;
-            margin: 1rem auto 0.5rem;
-        }
-
-        .clip p {
-            display: inline-block;
-            font-size: 1rem;
-        }
-
-        .clip button {
-            font-size: 1rem;
-            float: right;
-        }
-
-        button.delete {
-            background: #f00;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        /* Checkbox hack to control information box display */
-
-        label {
-            font-size: 3rem;
-            position: absolute;
-            top: 2px;
-            right: 3px;
-            z-index: 5;
-            cursor: pointer;
-            background-color: black;
-            border-radius: 10px;
-        }
-
-        input[type=checkbox] {
-            position: absolute;
-            top: -100px;
-        }
-
-        aside {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: translateX(100%);
-            transition: 0.3s all ease-out;
-            background-color: #efefef;
-            padding: 1rem;
-        }
-
-        aside p {
-            font-size: 1.2rem;
-            margin: 0.5rem 0;
-        }
-
-        aside a {
-            color: #666;
-        }
-
-        /* Toggled State of information box */
-        input[type=checkbox]:checked ~ aside {
-            transform: translateX(0);
-        }
-
-        /* Cursor when clip name is clicked over */
-
-        .clip p {
-            cursor: pointer;
-        }
-
-        /* Adjustments for wider screens */
-        @media all and (min-width: 800px) {
-            /* Don't take all the space as readability is lost when line length
-               goes past a certain size */
-            .wrapper {
-                width: 90%;
-                max-width: 1000px;
-                margin: 0 auto;
-            }
-        }
-    </style>
 </head>
 <body>
 
-<div class="wrapper">
+<div class="container">
 
-    <header>
-        <h1>Honest wave tool</h1>
-    </header>
-
-    <section class="main-controls">
-        <canvas class="visualizer" height="60px"></canvas>
-        <div id="buttons">
-            <button class="record">Record</button>
-            <button class="stop">Stop</button>
+    <div class="row">
+        <div class="col">
+            <img src="data:image/png;base64,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"
+                 class="img-fluid mx-auto d-block" width="50%">
         </div>
-    </section>
+    </div>
 
-    <section>
-        <div class="msgBox"></div>
-    </section>
+    <div class="row col-md-12 p-2">
+        <canvas class="visualizer" height="60px"></canvas>
+    </div>
+
+    <div class="row" id="buttons">
+        <div class="col-sm-12 p-2">
+            <div class="btn-group d-flex">
+                <button type="button" class="btn btn-danger record">Record</button>
+                <button type="button" class="btn btn-primary stop">Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <div class="spinner-grow text-danger d-none record-spinner" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
 </div>
 
-<script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8"
+        crossorigin="anonymous"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>
     // set up basic variables for app
-    (function() {
-    const record = document.querySelector('.record');
-    const stop = document.querySelector('.stop');
-    const canvas = document.querySelector('.visualizer');
-    const mainSection = document.querySelector('.main-controls');
-    const msgBox = document.querySelector('.msgBox');
+    (function () {
+        const record = document.querySelector('.record');
+        const stop = document.querySelector('.stop');
+        const canvas = document.querySelector('.visualizer');
+        const mainSection = document.querySelector('.main-controls');
+        const recordSpinner = document.querySelector('.record-spinner');
+        const isIOS =
+          navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
+          navigator.userAgent.match(/AppleWebKit/);
 
-    const logText = function (text) {
-        var textNode = document.createElement('p');
-        textNode.textContent = text;
-        msgBox.appendChild(textNode);
-    }
-
-    // disable stop button while not recording
-    stop.disabled = true;
-
-    // visualiser setup - create web audio api context and canvas
-    let audioCtx;
-    const canvasCtx = canvas.getContext("2d");
-
-    //main block for doing the audio recording
-    const constraints = {audio: true};
-    let chunks = [];
-    let sendChunks = false;
-
-
-    let onSuccess = function (stream) {
-        msgBox.textContent
-        const mediaRecorder = new MediaRecorder(stream);
-
-        visualize(stream);
-        let scheduledStopRecord = function () {
-            mediaRecorder.stop()
+        const logText = function (text) {
+            console.log(text);
         }
 
-        record.onclick = function () {
-            mediaRecorder.start();
-            logText("recorder started");
-            record.style.background = "red";
+        // disable stop button while not recording
+        stop.disabled = true;
 
-            stop.disabled = false;
-            record.disabled = true;
+        // visualiser setup - create web audio api context and canvas
+        let audioCtx;
+        const canvasCtx = canvas.getContext("2d");
 
-            sendChunks = true;
-            setTimeout(scheduledStopRecord, 5000)
-        }
+        //main block for doing the audio recording
+        const constraints = {audio: true};
+        let chunks = [];
+        let sendChunks = false;
 
-        stop.onclick = function () {
-            mediaRecorder.stop();
-            logText("recorder stopped");
-            record.style.background = "";
-            record.style.color = "";
-
-            stop.disabled = true;
-            record.disabled = false;
-
-            sendChunks = false;
-        }
-
-        mediaRecorder.ondataavailable = function (e) {
-            chunks.push(e.data);
-        }
-
-        mediaRecorder.onstop =  function (e) {
-            data = new FormData();
-            let blob = new Blob(chunks, { type: "audio/ogg" });
-            let file = new File([blob], 'sample.ogg');
-
-            data.append('file', file);
-            axios({
-                method: 'post',
-                url: '/',
-                data: data,
-                headers: {
-                  'Content-Type': `multipart/form-data`,
-                }
-            }).then(function (response) {
-                logText('Chunk uploaded')
-            });
-            logText('Audio chunk sent')
-            chunks = [];
+        let compassChunks = [];
+        let compassHandler = function(e) {
             if (sendChunks) {
+                compass = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+                compassChunks.push(compass)
+            }
+        };
+
+        if (isIOS) {
+            DeviceOrientationEvent.requestPermission()
+              .then((response) => {
+                if (response === "granted") {
+                  window.addEventListener("deviceorientation", compassHandler, true);
+                } else {
+                  alert("has to be allowed!");
+                }
+              })
+              .catch(() => alert("not supported"));
+        } else {
+            window.addEventListener("deviceorientationabsolute", compassHandler, true);
+        }
+
+        let onSuccess = function (stream) {
+            const mediaRecorder = new MediaRecorder(stream);
+
+            visualize(stream);
+            let scheduledStopRecord = function () {
+                mediaRecorder.stop()
+            }
+
+            record.onclick = function () {
                 mediaRecorder.start();
+                logText("recorder started");
+
+                stop.disabled = false;
+                record.disabled = true;
+
+                sendChunks = true;
                 setTimeout(scheduledStopRecord, 5000)
-            } else {
-                logText('No more scheduling');
+                recordSpinner.classList.remove('d-none');
+            }
+
+            stop.onclick = function () {
+                mediaRecorder.stop();
+                logText("recorder stopped");
+
+                recordSpinner.classList.add('d-none');
+                stop.disabled = true;
+                record.disabled = false;
+
+                sendChunks = false;
+            }
+
+            mediaRecorder.ondataavailable = function (e) {
+                chunks.push(e.data);
+            }
+
+            mediaRecorder.onstop = function (e) {
+                data = new FormData();
+                let blob = new Blob(chunks, {type: "audio/ogg"});
+                let file = new File([blob], 'sample.ogg');
+
+                data.append('file', file);
+                data.append('compass', JSON.stringify(compassChunks));
+                axios({
+                    method: 'post',
+                    url: '/',
+                    data: data,
+                    headers: {
+                        'Content-Type': `multipart/form-data`,
+                    }
+                }).then(function (response) {
+                    logText('Chunk uploaded')
+                });
+                logText('Audio chunk sent')
+                chunks = [];
+                compassChunks = [];
+                if (sendChunks) {
+                    mediaRecorder.start();
+                    setTimeout(scheduledStopRecord, 5000)
+                } else {
+                    logText('No more scheduling');
+                }
             }
         }
-    }
 
-    let onError = function (err) {
-        logText('The following error occured: ' + err);
-    }
-
-    navigator.mediaDevices.getUserMedia(constraints).then(onSuccess, onError)
-
-    function visualize(stream) {
-        if (!audioCtx) {
-            audioCtx = new AudioContext();
+        let onError = function (err) {
+            logText('The following error occured: ' + err);
         }
 
-        const source = audioCtx.createMediaStreamSource(stream);
+        navigator.mediaDevices.getUserMedia(constraints).then(onSuccess, onError)
 
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+        function visualize(stream) {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
 
-        source.connect(analyser);
-        //analyser.connect(audioCtx.destination);
+            const source = audioCtx.createMediaStreamSource(stream);
 
-        draw()
+            const analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
 
-        function draw() {
-            const WIDTH = canvas.width
-            const HEIGHT = canvas.height;
+            source.connect(analyser);
+            //analyser.connect(audioCtx.destination);
 
-            requestAnimationFrame(draw);
+            draw()
 
-            analyser.getByteTimeDomainData(dataArray);
+            function draw() {
+                const WIDTH = canvas.width
+                const HEIGHT = canvas.height;
 
-            canvasCtx.fillStyle = 'rgb(200, 200, 200)';
-            canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+                requestAnimationFrame(draw);
 
-            canvasCtx.lineWidth = 2;
-            canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+                analyser.getByteTimeDomainData(dataArray);
 
-            canvasCtx.beginPath();
+                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+                canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
-            let sliceWidth = WIDTH * 1.0 / bufferLength;
-            let x = 0;
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+
+                canvasCtx.beginPath();
+
+                let sliceWidth = WIDTH * 1.0 / bufferLength;
+                let x = 0;
 
 
-            for (let i = 0; i < bufferLength; i++) {
+                for (let i = 0; i < bufferLength; i++) {
 
-                let v = dataArray[i] / 128.0;
-                let y = v * HEIGHT / 2;
+                    let v = dataArray[i] / 128.0;
+                    let y = v * HEIGHT / 2;
 
-                if (i === 0) {
-                    canvasCtx.moveTo(x, y);
-                } else {
-                    canvasCtx.lineTo(x, y);
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+
+                    x += sliceWidth;
                 }
 
-                x += sliceWidth;
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+
             }
-
-            canvasCtx.lineTo(canvas.width, canvas.height / 2);
-            canvasCtx.stroke();
-
         }
-    }
 
-    window.onresize = function () {
-        canvas.width = mainSection.offsetWidth;
-    };
+        window.onresize = function () {
+            canvas.width = mainSection.offsetWidth;
+        };
 
-    window.onresize();
-})();
+        window.onresize();
+    })();
 </script>
 </body>
 </html>

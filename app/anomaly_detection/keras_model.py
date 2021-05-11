@@ -9,6 +9,9 @@
 # import python-library
 ########################################################################
 # from import
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import tensorflow as tf
 import tensorflow.keras.models
 from tensorflow.keras.models import Model

@@ -1,10 +1,14 @@
-import os
+import json
 import tempfile
-
+import logging
+import numpy as np
+from scipy.special import expit
 from flask import Flask, request, jsonify, redirect, flash, url_for, render_template
 from influxdb_client import InfluxDBClient, Point
+
 from anomaly import get_anomaly
 
+logger = logging.getLogger(__name__)
 ALLOWED_EXTENSIONS = {'wav'}
 
 app = Flask(__name__)
@@ -32,6 +36,8 @@ def index():
 @app.route('/', methods=['POST'])
 def get_anomaly_score():
     ogg_file = request.files['file']
+    compass = json.loads(request.form['compass'])
+
     with tempfile.NamedTemporaryFile(suffix='.ogg') as tf:
         ogg_file.save(tf.name)
         status, score = get_anomaly(tf.name)

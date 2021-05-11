@@ -1,8 +1,8 @@
 model_directory: assets
 
-machine_type: engine
+machine_type: compressor
 
-threshold: 11.766159931003752
+threshold: 12
 
 max_fpr : 0.1
 
